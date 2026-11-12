@@ -2,7 +2,7 @@
 
 ## 직원 인트라넷 Free 전환 · 2026-11-12
 
-사용자가 진료 사진 앱이 아닌 **직원 인트라넷**을 별도 주소에 배포하도록 확인했습니다. `goodmona-staff-intranet-demo` Free 서비스, 영구 디스크 없음, `/tmp/goodmona-intranet/intranet.sqlite3` 임시 DB로 전환합니다. 아래 유료 Blueprint와 `need_payment_info`는 과거 배포 시도 기록이며 현재 Free 설정에는 적용하지 않습니다. 서버 시작 시 마이그레이션과 멱등 시드를 수행하며 Free 인스턴스 교체 후에는 기본 가상 자료로 돌아갑니다.
+사용자가 진료 사진 앱이 아닌 **직원 인트라넷**을 별도 주소에 배포하도록 확인했습니다. **https://goodmona-staff-intranet-demo.onrender.com/** 에 Free 서비스로 배포했습니다. 영구 디스크 없이 `/tmp/goodmona-intranet/intranet.sqlite3` 임시 DB를 사용합니다. 실제 HTTPS 역할 접속·위키 검색·권한 차단·연차 신청과 중복 승인 방지·취소 복원·차량 충돌과 인접 예약·취소를 검증했습니다. 아래 유료 Blueprint와 `need_payment_info`는 과거 기록이며 현재 Free 설정에는 적용하지 않습니다. 서버 시작 시 마이그레이션과 멱등 시드를 수행하며 Free 인스턴스 교체 후에는 기본 가상 자료로 돌아갑니다.
 
 ## GitHub 업로드 및 배포 시도 · 2026-11-12
 
