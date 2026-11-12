@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}내 연차 · 굿모나의원{% endblock %}
+{% block content %}
+<div class="page-heading"><div><p class="eyebrow">TIME OFF</p><h1>내 연차</h1><p class="muted">필요한 휴식을 신청하고 처리 결과를 확인하세요.</p></div><div class="card"><span class="muted">현재 잔여 연차</span><div class="balance-number">{% if account %}{{ account.balance_days }}<small>일</small>{% else %}미설정{% endif %}</div></div></div>
+<div class="grid grid-2">
+  <section class="card"><h2>연차 신청</h2><p class="muted">사용량은 1일 또는 반일입니다. 승인 시 잔여일이 차감됩니다.</p>
+    {% if not account %}<p role="status">관리자에게 시작 잔여일 설정을 요청하세요.</p>{% endif %}
+    <form method="post" class="stack">{% csrf_token %}{{ form.non_field_errors }}{% for field in form %}<div class="field">{{ field.label_tag }}{{ field }}{{ field.errors }}</div>{% endfor %}<button class="button" type="submit" {% if not account %}disabled{% endif %}>연차 신청하기</button></form>
+  </section>
+  <section class="card"><h2>내 신청 내역</h2><div class="stack">{% for item in requests %}<article class="list-item"><div class="row"><strong>{{ item.leave_date|date:"Y.m.d" }} · {{ item.amount_days }}일</strong><span class="badge">{{ item.get_status_display }}</span></div>{% if item.reason %}<p>{{ item.reason }}</p>{% endif %}{% if item.reviewed_at %}<p class="muted">처리 {{ item.reviewed_at|date:"m.d H:i" }} · {{ item.reviewed_by.get_full_name|default:item.reviewed_by.username }}</p>{% endif %}{% if item.review_note %}<p>처리 메모: {{ item.review_note }}</p>{% endif %}{% if item.status == "pending" %}<form method="post" action="{% url 'operations:leave_cancel' item.pk %}">{% csrf_token %}<button type="submit" class="button secondary small">신청 취소</button></form>{% elif item.status == "approved" %}<p class="muted">승인 건 취소는 관리자에게 요청하세요.</p>{% endif %}</article>{% empty %}<div class="empty-state">아직 신청한 연차가 없습니다.</div>{% endfor %}</div></section>
+</div>
+<section class="card section-gap"><h2>연차 증감 이력</h2><p class="muted">시작 잔여일 설정부터 신청·처리·취소까지 기록합니다. 최근 40건을 표시합니다.</p><div class="table-wrap"><table><thead><tr><th>일시</th><th>내용</th><th>증감</th><th>잔여</th><th>처리자</th></tr></thead><tbody>{% for entry in ledger %}<tr><td>{{ entry.created_at|date:"Y.m.d H:i" }}</td><td>{{ entry.get_kind_display }}{% if entry.request %}<br><span class="muted">{{ entry.request.leave_date|date:"m.d" }}</span>{% endif %}</td><td>{% if entry.delta_units > 0 %}+{% endif %}{{ entry.delta_days }}일</td><td>{{ entry.balance_after_days }}일</td><td>{{ entry.actor.get_full_name|default:entry.actor.username }}</td></tr>{% empty %}<tr><td colspan="5">등록된 이력이 없습니다.</td></tr>{% endfor %}</tbody></table></div></section>
+{% endblock %}

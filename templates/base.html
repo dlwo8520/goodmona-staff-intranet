@@ -1,0 +1,26 @@
+{% load static %}<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#165b57"><title>{% block title %}직원 인트라넷{% endblock %} · 굿모나의원</title><link rel="stylesheet" href="{% static 'app.css' %}"><script defer src="{% static 'app.js' %}"></script></head>
+<body>
+<a class="skip-link" href="#main">본문으로 이동</a>
+{% if user.is_authenticated %}
+<aside class="sidebar">
+  <a class="brand" href="{% url 'core:home' %}"><span class="brand-mark" aria-hidden="true">g<span>m</span></span><span>굿모나의원<small>STAFF WORKSPACE</small></span></a>
+  <div class="sidebar-label">WORKSPACE <span>01</span></div>
+  <nav class="main-nav" aria-label="주 메뉴">
+    <a href="{% url 'core:home' %}" {% if request.resolver_match.url_name == 'home' %}aria-current="page"{% endif %}><span aria-hidden="true">⌂</span>홈·공지</a>
+    <a href="{% url 'wiki:search' %}" {% if request.resolver_match.app_name == 'wiki' %}aria-current="page"{% endif %}><span aria-hidden="true">⌕</span>CS 위키<span class="nav-dot"></span></a>
+    <a href="{% url 'operations:leave' %}" {% if request.resolver_match.url_name == 'leave' %}aria-current="page"{% endif %}><span aria-hidden="true">▦</span>내 연차</a>
+    <a href="{% url 'operations:vehicles' %}" {% if request.resolver_match.url_name == 'vehicles' %}aria-current="page"{% endif %}><span aria-hidden="true">↗</span>차량 예약</a>
+    {% if is_manager %}<a href="{% url 'core:manager' %}" {% if request.path == '/manage/' %}aria-current="page"{% endif %}><span aria-hidden="true">⚙</span>관리자</a>{% endif %}
+  </nav>
+  <div class="sidebar-bottom"><p><span class="live-dot"></span>가상 데이터 데모</p><p class="muted">좋은 응대의 시작,<br>함께 쌓는 정확한 지식.</p><div class="user-card"><span class="avatar">{{ user.first_name|default:user.username|slice:':1' }}</span><div><strong>{{ user.get_full_name|default:user.username }}</strong><small>{% if is_manager %}관리자{% else %}직원{% endif %} · 굿모나의원</small></div><form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="icon-button" title="역할 변경" aria-label="역할 변경">↪</button></form></div></div>
+</aside>
+{% endif %}
+<div class="{% if user.is_authenticated %}workspace{% else %}auth-workspace{% endif %}">
+{% if user.is_authenticated %}<header class="topbar"><span>굿모나의원 <span class="muted">/ 직원 인트라넷</span></span><span class="topbar-note"><span class="live-dot"></span>승인된 자료로, 정확하게</span><form class="role-switch" method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit">역할 변경 ↪</button></form></header>{% endif %}
+<main id="main" tabindex="-1">
+{% for message in messages %}<div class="flash {{ message.tags }}" role="status">{{ message }}</div>{% endfor %}
+{% block content %}{% endblock %}
+</main><footer class="page-footer"><span>GOODMONA · INTERNAL WORKSPACE</span><span>모든 자료와 인물은 면접 시연용 가상 데이터입니다.</span></footer></div>
+{% block extra_js %}{% endblock %}
+</body></html>

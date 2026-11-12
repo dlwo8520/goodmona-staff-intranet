@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}시작 잔여일 설정 · 굿모나의원{% endblock %}
+{% block content %}
+<div class="page-heading"><div><p class="eyebrow">MANAGEMENT / BALANCE</p><h1>시작 잔여일 설정</h1><p class="muted">아직 잔여일을 설정하지 않은 직원에게 한 번만 적용합니다.</p></div></div>
+<section class="card"><form method="post" class="stack">{% csrf_token %}{{ form.non_field_errors }}{% for field in form %}<div class="field">{{ field.label_tag }}{{ field }}{{ field.errors }}</div>{% endfor %}<p class="muted">0~365일, 0.5일 단위 · 설정자와 증감 이력을 남깁니다. 자동 발생과 이월은 데모에 포함하지 않습니다.</p><div class="actions"><button class="button">설정 저장</button><a class="button secondary" href="{% url 'operations:manage' %}">연차 처리로</a></div></form></section>
+{% endblock %}

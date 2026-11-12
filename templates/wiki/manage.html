@@ -1,0 +1,6 @@
+{% extends 'base.html' %}
+{% block title %}위키 문서 관리{% endblock %}
+{% block content %}
+<div class="page-heading"><div><p class="eyebrow">KNOWLEDGE ADMINISTRATION</p><h1>위키 문서 관리</h1><p class="muted">발행본은 그대로 보존하고, 개정은 새로운 초안에서 작성합니다.</p></div><a href="{% url 'wiki:new' %}" class="button">문서 등록 +</a></div>
+<div class="stack">{% for document in documents %}<section class="card"><div class="section-heading"><span class="badge">{{ document.get_kind_display }}</span><form method="post" action="{% url 'wiki:revise' document.pk %}">{% csrf_token %}<button class="button secondary small">개정 초안 만들기</button></form></div><div class="table-wrap"><table><thead><tr><th>문서</th><th>상태</th><th>개정일</th><th>담당자</th><th></th></tr></thead><tbody>{% for version in document.versions.all %}<tr><td>{{ version.title }} <span class="muted">v{{ version.number }}</span></td><td><span class="badge {% if version.status != 'published' %}secondary{% endif %}">{{ version.get_status_display }}</span></td><td>{{ version.revised_on|date:'Y.m.d' }}</td><td>{{ version.owner }}</td><td><a href="{% url 'wiki:edit' version.pk %}">{% if version.status == 'draft' %}편집{% else %}열기{% endif %} ↗</a></td></tr>{% endfor %}</tbody></table></div></section>{% empty %}<div class="card empty-state">등록된 문서가 없습니다.</div>{% endfor %}</div>
+{% endblock %}

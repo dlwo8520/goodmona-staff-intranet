@@ -1,0 +1,3 @@
+{% extends 'base.html' %}
+{% block title %}새 위키 문서{% endblock %}
+{% block content %}<div class="page-heading"><div><p class="eyebrow">NEW DOCUMENT</p><h1>새 문서 등록</h1><p class="muted">본문을 붙여넣고 저장한 뒤, 문단별 응대 허용 여부를 확인하세요.</p></div><a href="{% url 'wiki:manage' %}" class="button secondary">목록으로</a></div><section class="card"><form method="post" class="stack">{% csrf_token %}{{ form.non_field_errors }}{% for field in form %}<div class="field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% if field.help_text %}<p class="muted small">{{ field.help_text }}</p>{% endif %}{{ field.errors }}</div>{% endfor %}<div><button class="button">초안 저장</button></div></form></section>{% endblock %}

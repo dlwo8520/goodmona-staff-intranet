@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}차량 관리 · 굿모나의원{% endblock %}
+{% block content %}
+<div class="page-heading"><div><p class="eyebrow">MANAGEMENT / VEHICLES</p><h1>차량 관리</h1><p class="muted">차량을 등록하고 예약 허용 여부를 관리하세요.</p></div><a class="button secondary" href="{% url 'operations:vehicles' %}">예약 화면</a></div>
+<div class="grid grid-2"><section class="card"><h2>{% if editing %}차량 수정{% else %}차량 추가{% endif %}</h2><form method="post" class="stack">{% csrf_token %}{{ form.non_field_errors }}{% for field in form %}<div class="field">{{ field.label_tag }}{{ field }}{{ field.errors }}</div>{% endfor %}<p class="muted">예약 허용을 끄면 새 예약이 차단됩니다. 기존 예약은 유지됩니다.</p><div class="actions"><button class="button">저장</button>{% if editing %}<a class="button secondary" href="{% url 'operations:vehicle_manage' %}">새 차량 추가</a>{% endif %}</div></form></section><section class="card"><h2>등록 차량</h2><div class="stack">{% for vehicle in vehicles %}<article class="list-item"><div class="row"><strong>{{ vehicle.name }}</strong><span class="badge">{% if vehicle.active %}예약 허용{% else %}예약 중지{% endif %}</span></div><p class="muted">{{ vehicle.plate }}</p><a href="{% url 'operations:vehicle_edit' vehicle.pk %}">수정하기 →</a></article>{% empty %}<div class="empty-state">등록한 차량이 없습니다.</div>{% endfor %}</div></section></div>
+{% endblock %}

@@ -1,0 +1,29 @@
+# Independent task-2 service. Requires a paid disk-capable Render instance.
+services:
+  - type: web
+    name: goodmona-staff-intranet
+    runtime: python
+    plan: 0.5c-512mb
+    region: singapore
+    numInstances: 1
+    buildCommand: bash scripts/build.sh
+    startCommand: bash scripts/start.sh
+    healthCheckPath: /healthz/
+    disk:
+      name: goodmona-intranet-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.16
+      - key: DJANGO_DEBUG
+        value: 'False'
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: SQLITE_PATH
+        value: /var/data/intranet.sqlite3
+      - key: SEED_DEMO
+        value: 'true'
+      # Optional OPENAI_API_KEY: add as a secret in Render Environment after creation.
+      - key: OPENAI_MODEL
+        value: gpt-4.1-mini
