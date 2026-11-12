@@ -1,0 +1,37 @@
+{
+  "runtime_commit": "a32b64246c5adc0ac9d74637de6a879eeeaa7f0b",
+  "service_id": "srv-dbqqhcbbc2fs73e57c6g",
+  "plan": "free",
+  "persistent_disk": false,
+  "automated_tests": 71,
+  "dom_calendar_check": "passed",
+  "real_pc_iphone_visual_check": "not_performed",
+  "original_service_redeployed": false,
+  "flows": {
+    "url": "https://goodmona-intranet-calendar-preview.onrender.com",
+    "staff_admin_role_entry": true,
+    "wiki_scope_and_no_evidence": true,
+    "staff_admin_route_blocked": true,
+    "leave_apply_approve_once": true,
+    "leave_cancel_restored": true,
+    "vehicle_overlap_blocked": true,
+    "vehicle_adjacent_allowed": true,
+    "test_booking_cancelled": true,
+    "transport": "HTTPS with certificate verification"
+  },
+  "capacity": {
+    "url": "https://goodmona-intranet-calendar-preview.onrender.com",
+    "checked_at": "2026-11-12T11:56:11.559104+00:00",
+    "test_date": "2026-12-07",
+    "three_pending_visible_to_manager": true,
+    "third_approval_blocked_after_two_approved": true,
+    "third_employee_submission_blocked_by_server": true,
+    "staffing_5_approved_2_remaining_2_minimum_3": true,
+    "coworker_reason_private": true,
+    "blocked_approval_balance_unchanged": true,
+    "cancellation_restores_capacity_and_balance": true,
+    "other_vehicle_same_time_allowed": true,
+    "created_test_requests_cancelled": true,
+    "transport": "HTTPS with certificate verification"
+  }
+}

@@ -192,6 +192,24 @@ class CalendarTests(TestCase):
         for name in ('operations:manage', 'operations:staffing'):
             self.assertEqual(self.client.get(reverse(name)).status_code, 200)
 
+    def test_calendar_seed_preserves_edited_settings_and_cancelled_requests(self):
+        call_command('seed_calendar_demo', stdout=StringIO())
+        demo_admin = get_user_model().objects.get(username='demo_admin')
+        item = LeaveRequest.objects.get(seed_key='capacity-two-first')
+        process_leave(item.pk, demo_admin, 'cancel')
+        self.department.scheduled, self.department.minimum = 6, 4
+        self.department.save()
+        before = (LeaveRequest.objects.count(), LeaveLedger.objects.count(),
+                  list(LeaveAccount.objects.order_by('pk').values_list('pk', 'balance_units')))
+        call_command('seed_calendar_demo', stdout=StringIO())
+        after = (LeaveRequest.objects.count(), LeaveLedger.objects.count(),
+                 list(LeaveAccount.objects.order_by('pk').values_list('pk', 'balance_units')))
+        self.assertEqual(before, after)
+        item.refresh_from_db()
+        self.assertEqual(item.status, 'cancelled')
+        self.department.refresh_from_db()
+        self.assertEqual((self.department.scheduled, self.department.minimum), (6, 4))
+
 
 class CapacityConcurrencyTests(TransactionTestCase):
     def test_two_pending_approvals_cannot_take_same_last_seat(self):
