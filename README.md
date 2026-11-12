@@ -2,7 +2,7 @@
 
 Django 5.2 LTS, SQLite, Django 템플릿으로 만든 독립 직원용 인트라넷입니다. 과제 1의 프로젝트·DB·서비스를 참조하지 않습니다. 모든 인물·정책·자료·차량은 가상입니다.
 
-**현재 상태:** [GitHub 저장소](https://github.com/dlwo8520/goodmona-staff-intranet)에 코드를 업로드했고 [Linux CI 검사](https://github.com/dlwo8520/goodmona-staff-intranet/actions/runs/43203312582)가 통과했습니다. Render Blueprint를 생성했으나 계정의 결제 정보 미등록(`need_payment_info`)으로 배포 계획이 중단됐습니다. **공개 HTTPS URL은 아직 없습니다.** SQLite 영구 디스크를 쓰는 구성은 유료이며, 결제 정보 등록과 배포 계획 승인 후 실제 배포·검증을 이어갑니다. 로컬 주소는 `http://127.0.0.1:8002/`입니다.
+**현재 상태:** [GitHub 저장소](https://github.com/dlwo8520/goodmona-staff-intranet)의 직원 인트라넷을 별도 **Render Free 서비스 `goodmona-staff-intranet-demo`**로 배포하도록 전환했습니다. 유료 서비스와 영구 디스크는 사용하지 않습니다. 진료 사진 앱 `clinic-photo-demo`와 다른 프로젝트·서비스입니다. 로컬 주소는 `http://127.0.0.1:8002/`입니다. 실제 공개 주소와 검증 결과는 배포 후 기록합니다.
 
 ## Windows 실행
 
@@ -66,21 +66,21 @@ py -3.12 -m venv .venv
 
 ## Render 배포
 
-소스는 별도 새 Git 저장소에 올리고 Render에서 **과제 2 전용** Blueprint 또는 Web Service를 생성합니다. 과제 1의 서비스와 디스크를 재사용하지 않습니다. `.env`나 DB를 업로드하지 마세요. `artifacts/goodmona-intranet-source.zip`은 비밀과 런타임 데이터를 뺀 소스 패키지입니다.
+소스는 `goodmona-staff-intranet` 저장소에 올리고 Render에서 **과제 2 전용 Free Web Service**를 생성합니다. 과제 1의 진료 사진 서비스와 분리합니다. `.env`나 DB를 업로드하지 마세요. `artifacts/goodmona-intranet-source.zip`은 비밀과 런타임 데이터를 뺀 소스 패키지입니다.
 
-`render.yaml`에 Python 런타임, 단일 인스턴스, 영구 디스크, 빌드·시작 명령이 준비되어 있습니다. 영구 디스크는 유료 서비스가 필요합니다. 서비스 생성 화면에서 플랜과 비용을 확인하세요. 현재 공식 플랜 ID에 맞춰 `0.5c-512mb`를 사용했습니다. [Render Compute Plans](https://render.com/docs/compute-plans), [Blueprint 규격](https://render.com/docs/blueprint-spec)
+`render.yaml`은 Python 런타임, **`plan: free`**, 단일 인스턴스와 빌드·시작 명령을 선언하며 디스크를 연결하지 않습니다. SQLite는 임시 저장소를 사용합니다. [Render 무료 서비스](https://render.com/docs/free), [Blueprint 규격](https://render.com/docs/blueprint-spec)
 
 | 항목 | 설정 |
 | --- | --- |
-| 서비스 | `goodmona-staff-intranet` · Python · 단일 인스턴스 |
+| 서비스 | `goodmona-staff-intranet-demo` · Python · **Free** · 단일 인스턴스 |
 | Build | `bash scripts/build.sh` |
 | Start | `bash scripts/start.sh` |
-| 디스크 | 1 GB · `/var/data` |
-| SQLite | `/var/data/intranet.sqlite3` |
-| Health check | `/healthz/` · DB 연결 상태만 반환 |
+| 영구 디스크 | **없음** |
+| SQLite | `/tmp/goodmona-intranet/intranet.sqlite3` |
+| 상태 확인 URL | `/healthz/` · DB 연결 상태만 반환. MCP 서비스는 기본 TCP 검사 사용 |
 | 서버 | Gunicorn · worker 1개 · thread 4개 · `0.0.0.0:$PORT` |
 
-빌드에서는 의존성 설치와 `collectstatic`만 실행합니다. 빌드 때 설정 로딩은 임시 SQLite 경로를 쓰며 마이그레이션을 실행하지 않습니다. 영구 디스크가 연결된 **시작 단계**에서 디렉터리 준비 → `migrate` → 멱등 `seed_demo` → Gunicorn 순서로 실행합니다. 시작 설정이 `/var/data` 밖을 가리키면 Render에서 시작을 중단합니다. 디스크가 빌드·preDeploy에 연결되지 않는 규칙에 맞춘 구성입니다. [Render 영구 디스크](https://render.com/docs/disks)
+빌드에서는 의존성 설치와 `collectstatic`만 실행합니다. 실제 서버 **시작 단계**에서 임시 디렉터리 준비 → `migrate` → 멱등 `seed_demo` → Gunicorn 순서로 실행합니다. `INTRANET_STORAGE_MODE=ephemeral`에서는 전용 OS 임시 하위 디렉터리만 허용합니다. 초기화를 반복해도 현재 인스턴스의 문서·신청·승인·예약을 덮어쓰거나 중복 생성하지 않습니다.
 
 ### 환경 변수
 
@@ -91,7 +91,8 @@ py -3.12 -m venv .venv
 | `RENDER_EXTERNAL_HOSTNAME` | Render 자동 제공. 허용 호스트와 HTTPS CSRF origin에 자동 반영 |
 | `DJANGO_ALLOWED_HOSTS` | 로컬 기본 `localhost,127.0.0.1`. 커스텀 도메인 사용 시 해당 호스트 추가. `*` 사용 금지 |
 | `DJANGO_CSRF_TRUSTED_ORIGINS` | 커스텀 도메인이 있으면 `https://해당도메인` 추가. 쉼표로 구분 |
-| `SQLITE_PATH` | 배포 `/var/data/intranet.sqlite3` |
+| `SQLITE_PATH` | Free 배포 `/tmp/goodmona-intranet/intranet.sqlite3` |
+| `INTRANET_STORAGE_MODE` | Free 배포 `ephemeral` |
 | `SEED_DEMO` | `true`이면 시작 시 데모를 최초 생성. 이후에도 기존 자료 유지 |
 | `OPENAI_API_KEY` | 선택. Render Environment에 Secret로 추가. 없으면 검색·원문만 작동 |
 | `OPENAI_MODEL` | 기본 `gpt-4.1-mini`. 계정에서 사용 가능한 모델로 설정 |
@@ -102,7 +103,7 @@ py -3.12 -m venv .venv
 
 Render가 생성한 `https://<실제 서비스 호스트>.onrender.com/` 주소를 사용합니다. 이 표기는 형식 예시이며 발급된 주소가 아닙니다. HTTPS 프록시 헤더, 보안 쿠키, HSTS, `DEBUG=False`, WhiteNoise 정적 파일 설정을 적용합니다. Render는 기본 도메인의 TLS를 제공합니다. [Render TLS](https://render.com/docs/tls)
 
-서비스 재시작·재배포 때 같은 디스크를 유지하면 DB 파일을 다시 사용합니다. 디스크를 삭제·교체하거나 새 서비스를 만들면 같은 데이터가 자동 이전되지는 않습니다. 면접 전 배포 화면에서 디스크 연결과 실제 데이터 보존을 직접 확인하고, 운영용 백업은 SQLite backup API 또는 일관된 디스크 백업으로 별도 준비하세요.
+같은 실행 인스턴스에서는 새로고침과 재접속 후에도 변경 내용을 유지합니다. **무료 서버 재시작·재배포·절전 후 인스턴스가 교체되면 변경 내용이 사라지고 기본 가상 자료를 다시 생성합니다.** 영구 보존을 보장하는 운영 시스템이 아닌 무료 면접 데모입니다. 15분간 접속이 없으면 절전될 수 있고 다음 접속의 기동에는 약 1분이 걸릴 수 있으므로 면접 직전에 열어 준비하세요.
 
 ## 면접 시연 순서
 

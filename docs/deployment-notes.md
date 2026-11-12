@@ -1,5 +1,9 @@
 # Render 배포 확인 메모
 
+## 직원 인트라넷 Free 전환 · 2026-11-12
+
+사용자가 진료 사진 앱이 아닌 **직원 인트라넷**을 별도 주소에 배포하도록 확인했습니다. `goodmona-staff-intranet-demo` Free 서비스, 영구 디스크 없음, `/tmp/goodmona-intranet/intranet.sqlite3` 임시 DB로 전환합니다. 아래 유료 Blueprint와 `need_payment_info`는 과거 배포 시도 기록이며 현재 Free 설정에는 적용하지 않습니다. 서버 시작 시 마이그레이션과 멱등 시드를 수행하며 Free 인스턴스 교체 후에는 기본 가상 자료로 돌아갑니다.
+
 ## GitHub 업로드 및 배포 시도 · 2026-11-12
 
 소스를 `https://github.com/dlwo8520/goodmona-staff-intranet`에 업로드하고 Linux GitHub Actions 검사가 성공했음을 확인했습니다. 사용자가 `My Workspace`를 배포 대상으로 선택했습니다. Render Blueprint 생성 후 최초 계획은 `services[0]: need_payment_info` 오류로 실패했으며, 아직 웹 서비스·영구 디스크는 생성되지 않았습니다. 실패한 계획은 승인하지 않았습니다. 결제 정보 등록 후 같은 Blueprint의 계획을 재실행하고, 성공한 계획을 검토·승인한 뒤 배포해야 합니다. HTTPS 주소와 원격 데이터 보존은 아직 검증하지 못했습니다.
