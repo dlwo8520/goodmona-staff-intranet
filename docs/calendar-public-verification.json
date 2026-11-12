@@ -1,9 +1,11 @@
 {
-  "runtime_commit": "a32b64246c5adc0ac9d74637de6a879eeeaa7f0b",
+  "runtime_commit": "e7c55ddd426107d5b0d9850b05047dc4ba8ab7b8",
+  "deploy_id": "dep-dbqql3c9v7es73dcf8p0",
   "service_id": "srv-dbqqhcbbc2fs73e57c6g",
   "plan": "free",
   "persistent_disk": false,
   "automated_tests": 71,
+  "github_ci": "success",
   "dom_calendar_check": "passed",
   "real_pc_iphone_visual_check": "not_performed",
   "original_service_redeployed": false,
@@ -21,7 +23,7 @@
   },
   "capacity": {
     "url": "https://goodmona-intranet-calendar-preview.onrender.com",
-    "checked_at": "2026-11-12T11:56:11.559104+00:00",
+    "checked_at": "2026-11-12T12:03:26.458651+00:00",
     "test_date": "2026-12-07",
     "three_pending_visible_to_manager": true,
     "third_approval_blocked_after_two_approved": true,
