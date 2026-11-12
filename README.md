@@ -2,7 +2,9 @@
 
 Django 5.2 LTS, SQLite, Django 템플릿으로 만든 독립 직원용 인트라넷입니다. 과제 1의 프로젝트·DB·서비스를 참조하지 않습니다. 모든 인물·정책·자료·차량은 가상입니다.
 
-**현재 상태:** [GitHub 저장소](https://github.com/dlwo8520/goodmona-staff-intranet)의 직원 인트라넷을 별도 **Render Free 서비스 `goodmona-staff-intranet-demo`**로 배포하도록 전환했습니다. 유료 서비스와 영구 디스크는 사용하지 않습니다. 진료 사진 앱 `clinic-photo-demo`와 다른 프로젝트·서비스입니다. 로컬 주소는 `http://127.0.0.1:8002/`입니다. 실제 공개 주소와 검증 결과는 배포 후 기록합니다.
+**공개 직원 인트라넷: https://goodmona-staff-intranet-demo.onrender.com/**
+
+[GitHub 저장소](https://github.com/dlwo8520/goodmona-staff-intranet)의 직원 인트라넷을 별도 **Render Free 서비스**로 배포하고 실제 HTTPS에서 주요 기능을 검증했습니다. 유료 서비스와 영구 디스크는 사용하지 않습니다. 직원·관리자 버튼으로 접속합니다. 진료 사진 앱과 다른 프로젝트·서비스입니다. 로컬 주소는 `http://127.0.0.1:8002/`입니다.
 
 ## Windows 실행
 
@@ -101,7 +103,7 @@ py -3.12 -m venv .venv
 
 접속 화면의 역할 버튼은 배포 환경에서도 동일하게 작동하므로 데모 비밀번호 입력은 필요하지 않습니다. Django 비밀 키와 모델 API 키는 Render Secret로 관리하세요.
 
-Render가 생성한 `https://<실제 서비스 호스트>.onrender.com/` 주소를 사용합니다. 이 표기는 형식 예시이며 발급된 주소가 아닙니다. HTTPS 프록시 헤더, 보안 쿠키, HSTS, `DEBUG=False`, WhiteNoise 정적 파일 설정을 적용합니다. Render는 기본 도메인의 TLS를 제공합니다. [Render TLS](https://render.com/docs/tls)
+실제 발급된 주소는 **https://goodmona-staff-intranet-demo.onrender.com/** 입니다. HTTPS 프록시 헤더, 보안 쿠키, HSTS, `DEBUG=False`, WhiteNoise 정적 파일 설정을 적용합니다. Render는 기본 도메인의 TLS를 제공합니다. [Render TLS](https://render.com/docs/tls)
 
 같은 실행 인스턴스에서는 새로고침과 재접속 후에도 변경 내용을 유지합니다. **무료 서버 재시작·재배포·절전 후 인스턴스가 교체되면 변경 내용이 사라지고 기본 가상 자료를 다시 생성합니다.** 영구 보존을 보장하는 운영 시스템이 아닌 무료 면접 데모입니다. 15분간 접속이 없으면 절전될 수 있고 다음 접속의 기동에는 약 1분이 걸릴 수 있으므로 면접 직전에 열어 준비하세요.
 
@@ -130,7 +132,8 @@ Render가 생성한 `https://<실제 서비스 호스트>.onrender.com/` 주소�
 | 정적 파일·마이그레이션 | `collectstatic`, 마이그레이션 생성·적용 및 누락 검사 통과 |
 | 모델 성공·실패·공개 범위 | 모의 API 테스트 통과. **실제 모델 호출은 API 키가 없어 미검증** |
 | 브라우저 시각·iPhone Safari | 반응형 CSS 구현. Windows 브라우저 주소 판별 제한으로 자동 검증 중단, **실기기 미검증** |
-| 실제 Render HTTPS·Gunicorn 실행·재배포 보존 | **미검증**. 요청에 따라 로컬 검증과 배포 설정까지만 수행 |
+| 실제 Render Free HTTPS·Gunicorn 실행 | **배포 성공 및 실제 검증 통과**. 직원·관리자 접속, 위키 4가지 검색, 관리자 요청 차단, 연차 신청·중복 승인·취소 복원, 차량 충돌·인접 예약·취소 |
+| Free 재시작·재배포의 데이터 보존 | **영구 보존하지 않음**. 새 인스턴스에서는 기본 가상 자료를 자동 생성. 이 직원 서비스의 원격 재시작 실험은 별도 미실시 |
 
 다시 검증하기:
 
@@ -144,6 +147,6 @@ $env:DJANGO_DEBUG = 'False'
 Remove-Item Env:DJANGO_DEBUG
 ```
 
-개발 서버가 켜진 별도 PowerShell에서 `python scripts/http_smoke.py`를 실행하면 실제 HTTP 조회 검증을 재현합니다. `verify_persistence.py`는 임시 DB를 만들어 검사하고 실제 데모 DB는 수정하지 않습니다. `.github/workflows/tests.yml`의 Linux CI에서도 테스트·마이그레이션 누락·정적 파일·재시작 보존·운영 설정 검사를 통과했습니다.
+개발 서버가 켜진 별도 PowerShell에서 `python scripts/http_smoke.py`를 실행하면 실제 HTTP 조회 검증을 재현합니다. 공개 기능 검증은 `python scripts/verify_public.py https://goodmona-staff-intranet-demo.onrender.com`으로 실행합니다. 연차 승인 후 취소로 잔여일을 복원하고 테스트 차량 예약도 취소합니다. `verify_persistence.py`는 같은 임시 DB를 시작 프로세스들이 재사용하는 로컬 검사이며 Free 인스턴스 교체 후 보존을 뜻하지 않습니다. [배포 커밋의 Linux CI](https://github.com/dlwo8520/goodmona-staff-intranet/actions/runs/43207582581)도 통과했습니다. 실제 공개 검증 요약은 [검증 JSON](docs/public-verification.json)에 있습니다.
 
-배포 후에는 실제 HTTPS에서 역할 미선택 시 접속 선택 화면으로 이동 → 직원 접속·검색 → 신청 → 관리자 접속·승인 → 직원 잔여일 → 예약 충돌을 직접 검증하고, 서비스 재시작·재배포 후 같은 데이터가 남는지 확인하세요. 배포 규칙의 공식 출처와 계정 연결 조사 내용은 [배포 메모](docs/deployment-notes.md)에 정리했습니다. API 형식은 [OpenAI Responses 문서](https://platform.openai.com/docs/api-reference/responses/create)를 참고했습니다.
+실제 HTTPS에서 역할 미선택 시 접속 선택 화면 이동 → 직원 검색 → 신청 → 관리자 승인 → 직원 잔여일 → 예약 충돌까지 검증했습니다. PC·아이폰 Safari의 실제 조작은 직접 확인할 수 있습니다. 배포 규칙과 과거 배포 시도는 [배포 메모](docs/deployment-notes.md)에 정리했습니다. API 형식은 [OpenAI Responses 문서](https://platform.openai.com/docs/api-reference/responses/create)를 참고했습니다.
