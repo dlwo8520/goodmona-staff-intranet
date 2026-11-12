@@ -5,7 +5,8 @@ from django.db.models import F
 from django.utils import timezone
 
 from core.permissions import is_manager
-from .models import LeaveAccount, LeaveLedger, LeaveRequest, Reservation, Vehicle
+from .models import LeaveAccount, LeaveLedger, LeaveRequest, Reservation, Vehicle, LeavePeriodAudit, Department, EmployeeProfile
+from .staffing import availability, department_for
 
 
 def require_manager(actor):
@@ -22,13 +23,24 @@ def initialize_balance(user, units, actor):
     get_user_model().objects.select_for_update().get(pk=user.pk)
     account, created = LeaveAccount.objects.get_or_create(user=user, defaults={"balance_units": units})
     if created:
+        department, _ = Department.objects.get_or_create(name='운영지원부', defaults={'scheduled': 5, 'minimum': 3})
+        EmployeeProfile.objects.get_or_create(user=user, defaults={'department': department})
         LeaveLedger.objects.create(account=account, kind=LeaveLedger.Kind.INITIAL,
                                    delta_units=units, balance_after_units=units, actor=actor)
     return account, created
 
 
 @transaction.atomic
-def submit_leave(user, leave_date, units, reason="", seed_key=None):
+def submit_leave(user, leave_date, units=None, reason="", seed_key=None, period=None):
+    if period is None and units == 2:
+        period = 'full'
+    if period not in ('full', 'am', 'pm'):
+        raise ValidationError('하루 / 오전 반차 / 오후 반차를 선택해 주세요.')
+    expected = 2 if period == 'full' else 1
+    if units is None:
+        units = expected
+    if units != expected:
+        raise ValidationError('신청 구분과 사용량이 일치하지 않습니다.')
     if units not in (1, 2) or isinstance(units, bool):
         raise ValidationError("사용량은 1일 또는 0.5일만 선택할 수 있습니다.")
     if leave_date < timezone.localdate():
@@ -36,10 +48,12 @@ def submit_leave(user, leave_date, units, reason="", seed_key=None):
     account = LeaveAccount.objects.select_for_update().filter(user=user).first()
     if account is None:
         raise ValidationError("관리자에게 시작 잔여일 설정을 요청하세요.")
-    if LeaveRequest.objects.filter(user=user, leave_date=leave_date, status__in=["pending", "approved"]).exists():
-        raise ValidationError("해당 날짜에 이미 대기 또는 승인된 연차가 있습니다.")
+    department = department_for(user)
+    check = availability(user, leave_date, period, department)
+    if not check['allowed']:
+        raise ValidationError(check['reason'])
     request = LeaveRequest.objects.create(user=user, leave_date=leave_date, units=units,
-                                          reason=reason[:200], seed_key=seed_key)
+                                          reason=reason[:200], seed_key=seed_key, period=period, department=department)
     LeaveLedger.objects.create(account=account, request=request, kind=LeaveLedger.Kind.APPLIED,
                                delta_units=0, balance_after_units=account.balance_units, actor=user)
     return request
@@ -64,6 +78,12 @@ def process_leave(request_id, actor, action, note=""):
     if request.status not in allowed:
         raise ValidationError("이미 처리된 신청입니다. 현재 상태를 확인하세요.")
     account = LeaveAccount.objects.select_for_update().get(user_id=request.user_id)
+    if action == 'approve':
+        if request.period == 'unknown':
+            raise ValidationError('이전 반차의 오전·오후 확인이 필요합니다. 시간을 확인한 후 승인하세요.')
+        check = availability(request.user, request.leave_date, request.period, request.department, exclude_request=request.pk)
+        if not check['allowed']:
+            raise ValidationError(check['reason'])
     delta = -request.units if action == "approve" else request.units if action == "cancel" and request.status == "approved" else 0
     if delta < 0:
         changed = LeaveAccount.objects.filter(pk=account.pk, balance_units__gte=-delta).update(balance_units=F("balance_units") + delta)
@@ -81,6 +101,22 @@ def process_leave(request_id, actor, action, note=""):
     LeaveLedger.objects.create(account=account, request=request, kind=kind, delta_units=delta,
                                balance_after_units=account.balance_units, actor=actor, note=note[:200])
     return request, True
+
+
+@transaction.atomic
+def confirm_leave_period(request_id, actor, period):
+    require_manager(actor)
+    request = LeaveRequest.objects.select_for_update().get(pk=request_id)
+    if request.units != 1 or period not in ('am', 'pm'):
+        raise ValidationError('반차는 오전 또는 오후로 확인해 주세요.')
+    if request.period == period:
+        return request
+    if request.period != 'unknown':
+        raise ValidationError('이미 확인된 구분입니다. 기존 신청을 취소하고 다시 신청하세요.')
+    LeavePeriodAudit.objects.create(request=request, previous=request.period, current=period, actor=actor)
+    request.period = period
+    request.save(update_fields=['period'])
+    return request
 
 
 @transaction.atomic

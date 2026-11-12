@@ -53,7 +53,7 @@ class DemoSeedTests(TestCase):
         before = domain_counts()
         output = seed()
         self.assertEqual(domain_counts(), before)
-        self.assertEqual(get_user_model().objects.count(), 2)
+        self.assertEqual(get_user_model().objects.count(), 6)
         self.assertEqual(Announcement.objects.count(), 2)
         self.assertGreaterEqual(Document.objects.count(), 6)
         self.assertGreaterEqual(DocumentVersion.objects.filter(status="published").count(), 6)
@@ -202,9 +202,9 @@ class IntranetIntegrationTests(TestCase):
         original_units = account.balance_units
         requested_date = timezone.localdate() + timedelta(days=10)
         response = self.client.post(reverse("operations:leave"), {
-            "leave_date": requested_date.isoformat(), "units": 1, "reason": "통합 시연용 가상 일정",
+            "leave_date": requested_date.isoformat(), "period": "am", "reason": "통합 시연용 가상 일정",
         })
-        self.assertRedirects(response, reverse("operations:leave"))
+        self.assertRedirects(response, reverse("operations:leave") + '?date=' + requested_date.isoformat())
         leave = LeaveRequest.objects.get(user=self.staff, leave_date=requested_date)
         account.refresh_from_db()
         self.assertEqual(leave.status, "pending")
@@ -221,9 +221,9 @@ class IntranetIntegrationTests(TestCase):
         self.assertRedirects(response, reverse("operations:manage"))
         leave.refresh_from_db()
         self.assertEqual(leave.status, "approved")
-        staff_page = self.client.get(reverse("operations:leave"))
+        staff_page = self.client.get(reverse("operations:leave"), {'date': requested_date.isoformat()})
         self.assertEqual(staff_page.context["account"].balance_units, original_units - 1)
-        self.assertContains(staff_page, "가상 시연 승인")
+        self.assertEqual(staff_page.context['calendar_data']['items'][0]['note'], '가상 시연 승인')
         ledger = LeaveLedger.objects.get(request=leave, kind="approved")
         self.assertEqual(ledger.actor_id, self.admin.pk)
         self.assertEqual(ledger.delta_units, -1)

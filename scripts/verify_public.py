@@ -25,6 +25,13 @@ def balance(html):
     assert match, 'Balance not found'
     return Decimal(match.group(1))
 
+def calendar_data(kind, day, vehicle=None):
+    path = '/api/manage/leave/calendar/' if kind == 'manage' else '/api/vehicles/calendar/' if kind == 'vehicles' else '/api/leave/calendar/'
+    query = '?date=' + day.isoformat()
+    if vehicle:
+        query += '&vehicle=' + str(vehicle)
+    return json.loads(get(path + query)[1])
+
 role('staff')
 try:
     get('/manage/')
@@ -32,25 +39,27 @@ try:
 except urllib.error.HTTPError as error:
     assert error.code == 403
 _, leave, _ = get('/leave/')
-before = balance(leave)
 day = datetime.now(timezone(timedelta(hours=9))).date()
+target_day = day + timedelta(days=17)
+before = Decimal(calendar_data('leave', target_day)['balance'])
 marker = 'PUBLIC-DEMO-' + uuid.uuid4().hex[:12]
-_, leave, _ = post('/leave/', {'leave_date': (day + timedelta(days=17)).isoformat(), 'units': '1', 'reason': marker}, leave)
-row = next(article for article in re.findall(r'<article\b.*?</article>', leave, re.S) if marker in article)
-request_id = re.search(r'/leave/(\d+)/cancel/', row).group(1)
+_, leave, _ = post('/leave/', {'leave_date': target_day.isoformat(), 'period': 'am', 'reason': marker}, leave)
+request_id = next(item['id'] for item in calendar_data('leave', target_day)['items'] if item['reason'] == marker)
 role('admin')
+assert any(item['id'] == request_id for item in calendar_data('manage', target_day)['items']), 'Employee request missing in manager calendar'
 _, manager, _ = get('/manage/leave/')
 _, manager, _ = post(f'/manage/leave/{request_id}/process/', {'action': 'approve', 'note': marker}, manager)
 _, manager, _ = post(f'/manage/leave/{request_id}/process/', {'action': 'approve', 'note': marker}, manager)
 role('staff')
 _, approved, _ = get('/leave/')
-assert balance(approved) == before - Decimal('0.5'), 'Approval did not deduct exactly once'
-assert marker in approved
+data = calendar_data('leave', target_day)
+assert Decimal(data['balance']) == before - Decimal('0.5'), 'Approval did not deduct exactly once'
+assert next(item for item in data['items'] if item['id'] == request_id)['status'] == 'approved'
 role('admin')
 _, manager, _ = get('/manage/leave/')
 post(f'/manage/leave/{request_id}/process/', {'action': 'cancel', 'note': 'Public demo verification restored'}, manager)
 role('staff')
-assert balance(get('/leave/')[1]) == before, 'Cancellation did not restore balance'
+assert Decimal(calendar_data('leave', target_day)['balance']) == before, 'Cancellation did not restore balance'
 _, vehicle_page, _ = get('/vehicles/')
 select = re.search(r'<select[^>]+name="vehicle".*?</select>', vehicle_page, re.S).group(0)
 vehicle_id = re.search(r'value="(\d+)"', select).group(1)
@@ -61,8 +70,7 @@ _, conflict, _ = post('/vehicles/', {'vehicle': vehicle_id, 'starts_at': tomorro
 assert '이미 예약된 시간과 겹칩니다' in conflict
 _, booked, _ = post('/vehicles/', {'vehicle': vehicle_id, 'starts_at': tomorrow + 'T11:00',
                                   'ends_at': tomorrow + 'T12:00', 'purpose': car_marker}, conflict)
-row = next(row for row in re.findall(r'<tr\b.*?</tr>', booked, re.S) if car_marker in row)
-reservation_id = re.search(r'/vehicles/(\d+)/cancel/', row).group(1)
+reservation_id = next(item['id'] for item in calendar_data('vehicles', day + timedelta(days=1), vehicle_id)['items'] if item.get('purpose') == car_marker)
 post(f'/vehicles/{reservation_id}/cancel/', {}, booked)
 evidence = {'url': base, 'staff_admin_role_entry': True, 'wiki_scope_and_no_evidence': True,
             'staff_admin_route_blocked': True, 'leave_apply_approve_once': True,

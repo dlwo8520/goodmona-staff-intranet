@@ -14,3 +14,10 @@ document.addEventListener('click', async (event) => {
     button.textContent = '선택된 내용을 복사해 주세요';
   }
 });
+if (document.getElementById('pending-leave-count')) {
+  async function refreshPendingLeaveCount() {
+    if (document.hidden) return;
+    try { const response=await fetch('/api/manage/leave/calendar/',{credentials:'same-origin',cache:'no-store'}); if(response.ok && !response.redirected) { const data=await response.json(); document.getElementById('pending-leave-count').textContent=data.pending_total; } } catch (_) {}
+  }
+  refreshPendingLeaveCount(); setInterval(refreshPendingLeaveCount,5000);
+}
