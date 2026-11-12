@@ -1,0 +1,17 @@
+{
+  "url": "https://goodmona-staff-intranet-demo.onrender.com",
+  "staff_admin_role_entry": true,
+  "wiki_scope_and_no_evidence": true,
+  "staff_admin_route_blocked": true,
+  "leave_apply_approve_once": true,
+  "leave_cancel_restored": true,
+  "vehicle_overlap_blocked": true,
+  "vehicle_adjacent_allowed": true,
+  "test_booking_cancelled": true,
+  "transport": "HTTPS with certificate verification",
+  "service_plan": "free",
+  "persistent_disk": false,
+  "automated_tests": 54,
+  "source_commit": "6e64a3ca43dd781914bf9ebcb52960bb0682d0af",
+  "manual_pc_iphone": "not_automated"
+}
