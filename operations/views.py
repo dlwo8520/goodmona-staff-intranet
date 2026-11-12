@@ -5,6 +5,8 @@ from django.http import HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
+from django.urls import reverse
+from urllib.parse import urlencode
 
 from core.permissions import manager_required
 from .forms import InitialBalanceForm, LeaveForm, ReservationForm, VehicleForm
@@ -40,12 +42,14 @@ def leave(request):
 @require_POST
 def leave_cancel(request, pk):
     # Ownership is checked before status handling, including repeated requests.
-    get_object_or_404(LeaveRequest, pk=pk, user=request.user)
+    item = get_object_or_404(LeaveRequest, pk=pk, user=request.user)
     try:
         _, changed = process_leave(pk, request.user, "cancel")
         messages.success(request, "신청을 취소했습니다." if changed else "이미 취소된 신청입니다.")
     except ValidationError as exc:
         messages.error(request, " ".join(exc.messages))
+    if request.POST.get('calendar') == '1':
+        return redirect(reverse('operations:leave') + '?' + urlencode({'date': item.leave_date.isoformat()}))
     return redirect("operations:leave")
 
 
@@ -62,7 +66,7 @@ def manage(request):
 @manager_required
 @require_POST
 def leave_process(request, pk):
-    get_object_or_404(LeaveRequest, pk=pk)
+    item = get_object_or_404(LeaveRequest, pk=pk)
     action = request.POST.get("action")
     if action not in ("approve", "reject", "cancel"):
         return HttpResponseBadRequest("지원하지 않는 처리입니다.")
@@ -71,6 +75,13 @@ def leave_process(request, pk):
         messages.success(request, "처리 결과와 증감 이력을 저장했습니다." if changed else "이미 처리되었습니다. 잔여일은 다시 차감되지 않습니다.")
     except ValidationError as exc:
         messages.error(request, " ".join(exc.messages))
+    if request.POST.get('calendar') == '1':
+        query = {'date': item.leave_date.isoformat()}
+        if request.POST.get('return_department', '').isdigit():
+            query['department'] = request.POST['return_department']
+        if request.POST.get('return_pending') == '1':
+            query['pending'] = '1'
+        return redirect(reverse('operations:manage') + '?' + urlencode(query))
     return redirect("operations:manage")
 
 
@@ -106,9 +117,11 @@ def vehicles(request):
 @login_required
 @require_POST
 def reservation_cancel(request, pk):
-    get_object_or_404(Reservation, pk=pk, user=request.user)
+    item = get_object_or_404(Reservation, pk=pk, user=request.user)
     _, changed = cancel_reservation(pk, request.user)
     messages.success(request, "차량 예약을 취소했습니다." if changed else "이미 취소된 예약입니다.")
+    if request.POST.get('calendar') == '1':
+        return redirect(reverse('operations:vehicles') + '?' + urlencode({'vehicle': item.vehicle_id, 'date': timezone.localtime(item.starts_at).date().isoformat()}))
     return redirect("operations:vehicles")
 
 

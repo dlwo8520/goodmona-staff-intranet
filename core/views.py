@@ -17,13 +17,19 @@ class DemoRoleLoginView(View):
     def get(self, request):
         if request.user.is_authenticated:
             return redirect('core:home')
-        return render(request, self.template_name, {'next': request.GET.get('next', '')})
+        accounts = get_user_model().objects.filter(username__in=['demo_staff', 'demo_staff2', 'demo_staff3', 'demo_staff4', 'demo_staff5'], is_active=True, is_staff=False).order_by('username')
+        return render(request, self.template_name, {'next': request.GET.get('next', ''), 'demo_staffs': accounts})
 
     def post(self, request, *args, **kwargs):
         # Deliberately open role selection for this fictional interview demo.
         # Never accept a user ID, arbitrary username or privilege flag from POST.
         role = request.POST.get('role')
         username = {'staff': 'demo_staff', 'admin': 'demo_admin'}.get(role)
+        if role == 'staff':
+            selected = request.POST.get('demo_user', 'demo_staff')
+            if selected not in ('demo_staff', 'demo_staff2', 'demo_staff3', 'demo_staff4', 'demo_staff5'):
+                selected = 'demo_staff'
+            username = selected
         if username is None:
             return render(request, self.template_name, {'error': '접속할 역할을 선택해 주세요.'}, status=400)
         account = get_user_model().objects.filter(username=username, is_active=True).first()

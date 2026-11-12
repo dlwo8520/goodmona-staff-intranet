@@ -10,6 +10,36 @@ def days(units):
     return Decimal(units) / Decimal(2)
 
 
+class Department(models.Model):
+    name = models.CharField(max_length=80, unique=True)
+    scheduled = models.PositiveSmallIntegerField(default=5)
+    minimum = models.PositiveSmallIntegerField(default=3)
+
+    class Meta:
+        ordering = ['name', 'pk']
+
+    def __str__(self):
+        return self.name
+
+
+class EmployeeProfile(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='staff_profile')
+    department = models.ForeignKey(Department, null=True, blank=True, on_delete=models.PROTECT)
+
+
+class StaffingOverride(models.Model):
+    department = models.ForeignKey(Department, on_delete=models.PROTECT)
+    date = models.DateField()
+    period = models.CharField(max_length=2, choices=[('am', '오전'), ('pm', '오후')])
+    scheduled = models.PositiveSmallIntegerField()
+    minimum = models.PositiveSmallIntegerField()
+    updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['department', 'date', 'period'], name='staffing_department_date_slot')]
+
+
 class LeaveAccount(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="leave_account")
     balance_units = models.PositiveIntegerField(default=0)
@@ -29,13 +59,15 @@ class LeaveAccount(models.Model):
 class LeaveRequest(models.Model):
     class Status(models.TextChoices):
         PENDING = "pending", "승인 대기"
-        APPROVED = "approved", "승인"
+        APPROVED = "approved", "승인 완료"
         REJECTED = "rejected", "반려"
         CANCELLED = "cancelled", "취소"
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="leave_requests")
     leave_date = models.DateField()
     units = models.PositiveSmallIntegerField(choices=[(2, "1일"), (1, "0.5일")])
+    period = models.CharField(max_length=8, choices=[('full', '하루'), ('am', '오전 반차'), ('pm', '오후 반차'), ('unknown', '시간 확인 필요')], default='unknown')
+    department = models.ForeignKey(Department, null=True, blank=True, on_delete=models.PROTECT)
     reason = models.CharField(max_length=200, blank=True)
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.PENDING)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -46,11 +78,20 @@ class LeaveRequest(models.Model):
 
     class Meta:
         ordering = ["-created_at", "-pk"]
-        constraints = [models.CheckConstraint(condition=Q(units__in=[1, 2]), name="leave_allowed_units")]
+        constraints = [models.CheckConstraint(condition=Q(units__in=[1, 2]), name="leave_allowed_units"),
+            models.CheckConstraint(condition=Q(units=2, period='full') | Q(units=1, period__in=['am', 'pm', 'unknown']), name='leave_period_matches_units')]
 
     @property
     def amount_days(self):
         return days(self.units)
+
+
+class LeavePeriodAudit(models.Model):
+    request = models.ForeignKey(LeaveRequest, on_delete=models.PROTECT, related_name='period_confirmations')
+    previous = models.CharField(max_length=8)
+    current = models.CharField(max_length=8)
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
 
 
 class LeaveLedger(models.Model):

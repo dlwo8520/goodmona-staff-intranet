@@ -7,7 +7,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from core.models import Announcement
-from operations.models import LeaveAccount, LeaveRequest, Reservation, Vehicle
+from operations.models import Department, EmployeeProfile, LeaveAccount, LeaveRequest, Reservation, Vehicle
 from operations.services import book_vehicle, initialize_balance, submit_leave
 from wiki.models import Document, DocumentVersion, Paragraph
 
@@ -31,6 +31,11 @@ class Command(BaseCommand):
 
         staff = user_once("demo_staff", "가상 지원")
         admin = user_once("demo_admin", "가상 관리", manager=True)
+        department, _ = Department.objects.get_or_create(name='운영지원부', defaults={'scheduled': 5, 'minimum': 3})
+        extra_staff = [user_once(f'demo_staff{number}', name) for number, name in
+                       [(2, '가상 민서'), (3, '가상 도윤'), (4, '가상 지우'), (5, '가상 서아')]]
+        for person in [staff, admin, *extra_staff]:
+            EmployeeProfile.objects.get_or_create(user=person, defaults={'department': department})
 
         announcements = [
             ("demo-welcome", "굿모나 팀 인트라넷에 오신 것을 환영합니다", "이 공간의 계정·자료·일정은 모두 면접 시연용 가상 데이터입니다. 고객 개인정보 없이 CS 위키에서 승인된 안내를 찾고, 직원 검토 후 사용해 주세요."),
@@ -119,7 +124,7 @@ class Command(BaseCommand):
             [("ARCHIVED-ONLY-538. 과거 가상 운영 안내입니다. 현재 발행 자료가 아니므로 검색과 고객 답변에 사용하지 않습니다.", True, "")], status="archived",
         )
 
-        for user, units in ((staff, 24), (admin, 30)):
+        for user, units in [(staff, 24), (admin, 30), *[(person, 24) for person in extra_staff]]:
             if not LeaveAccount.objects.filter(user=user).exists():
                 initialize_balance(user, units, actor=admin)
         for user, days_ahead, units, key in (
@@ -132,7 +137,7 @@ class Command(BaseCommand):
             if LeaveRequest.objects.filter(user=user, leave_date=leave_date, status__in=["pending", "approved"]).exists():
                 self.stdout.write(f"기존 동일 날짜 신청을 보존하여 {key} 생성을 생략했습니다.")
                 continue
-            submit_leave(user, leave_date, units, reason="가상 시연용 개인 일정", seed_key=key)
+            submit_leave(user, leave_date, units, reason="가상 시연용 개인 일정", seed_key=key, period='full' if units == 2 else 'am')
 
         first, _ = Vehicle.objects.get_or_create(seed_key="demo-vehicle-1", defaults={
             "name": "공용 차량 1 · 가상 세단", "plate": "가상 01호",

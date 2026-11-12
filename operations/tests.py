@@ -28,7 +28,7 @@ class OperationsTests(TestCase):
         self.vehicle2 = Vehicle.objects.create(name="가상 2호", plate="데모-002")
 
     def apply(self, units=2, user=None):
-        return submit_leave(user or self.staff, self.day, units)
+        return submit_leave(user or self.staff, self.day, units, period='am' if units == 1 else 'full')
 
     def test_initial_balance_once_and_immutable_audit(self):
         account, created = initialize_balance(self.staff, 100, self.manager)

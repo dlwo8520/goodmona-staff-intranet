@@ -7,11 +7,14 @@ from .models import Vehicle
 
 class LeaveForm(forms.Form):
     leave_date = forms.DateField(label="사용 날짜", widget=forms.DateInput(attrs={"type": "date"}))
-    units = forms.TypedChoiceField(label="사용량", choices=[(2, "1일"), (1, "0.5일")], coerce=int)
+    period = forms.ChoiceField(label='신청 구분', choices=[('full', '하루'), ('am', '오전 반차'), ('pm', '오후 반차')], widget=forms.RadioSelect)
     reason = forms.CharField(label="메모 (선택)", max_length=200, required=False,
                             widget=forms.TextInput(attrs={"placeholder": "개인정보 없이 간단히 입력하세요"}))
 
     def __init__(self, *args, **kwargs):
+        # Full-day legacy posts remain valid; old unspecified half-days need explicit confirmation.
+        if args and args[0] is not None and 'period' not in args[0] and str(args[0].get('units')) == '2':
+            data = args[0].copy(); data['period'] = 'full'; args = (data, *args[1:])
         super().__init__(*args, **kwargs)
         self.fields["leave_date"].widget.attrs["min"] = timezone.localdate().isoformat()
 
