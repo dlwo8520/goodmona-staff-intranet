@@ -2,7 +2,7 @@
 
 Django 5.2 LTS, SQLite, Django 템플릿으로 만든 독립 직원용 인트라넷입니다. 과제 1의 프로젝트·DB·서비스를 참조하지 않습니다. 모든 인물·정책·자료·차량은 가상입니다.
 
-**현재 상태:** 로컬 구현·검증과 Render 배포 설정까지 완료했습니다. 사용자 선택에 따라 실제 Render 서비스는 생성하지 않았으며 **공개 HTTPS URL은 아직 없습니다.** 로컬 주소는 `http://127.0.0.1:8002/`입니다. 로컬 주소는 면접장 PC에서 접속할 수 없으므로 면접 전 아래 Render 배포가 필요합니다.
+**현재 상태:** [GitHub 저장소](https://github.com/dlwo8520/goodmona-staff-intranet)에 코드를 업로드했고 [Linux CI 검사](https://github.com/dlwo8520/goodmona-staff-intranet/actions/runs/43203312582)가 통과했습니다. Render Blueprint를 생성했으나 계정의 결제 정보 미등록(`need_payment_info`)으로 배포 계획이 중단됐습니다. **공개 HTTPS URL은 아직 없습니다.** SQLite 영구 디스크를 쓰는 구성은 유료이며, 결제 정보 등록과 배포 계획 승인 후 실제 배포·검증을 이어갑니다. 로컬 주소는 `http://127.0.0.1:8002/`입니다.
 
 ## Windows 실행
 
@@ -143,6 +143,6 @@ $env:DJANGO_DEBUG = 'False'
 Remove-Item Env:DJANGO_DEBUG
 ```
 
-개발 서버가 켜진 별도 PowerShell에서 `python scripts/http_smoke.py`를 실행하면 실제 HTTP 조회 검증을 재현합니다. `verify_persistence.py`는 임시 DB를 만들어 검사하고 실제 데모 DB는 수정하지 않습니다. `.github/workflows/tests.yml`에는 Linux CI 검사도 준비했으며 원격 CI 실행 자체는 아직 수행하지 않았습니다.
+개발 서버가 켜진 별도 PowerShell에서 `python scripts/http_smoke.py`를 실행하면 실제 HTTP 조회 검증을 재현합니다. `verify_persistence.py`는 임시 DB를 만들어 검사하고 실제 데모 DB는 수정하지 않습니다. `.github/workflows/tests.yml`의 Linux CI에서도 테스트·마이그레이션 누락·정적 파일·재시작 보존·운영 설정 검사를 통과했습니다.
 
 배포 후에는 실제 HTTPS에서 역할 미선택 시 접속 선택 화면으로 이동 → 직원 접속·검색 → 신청 → 관리자 접속·승인 → 직원 잔여일 → 예약 충돌을 직접 검증하고, 서비스 재시작·재배포 후 같은 데이터가 남는지 확인하세요. 배포 규칙의 공식 출처와 계정 연결 조사 내용은 [배포 메모](docs/deployment-notes.md)에 정리했습니다. API 형식은 [OpenAI Responses 문서](https://platform.openai.com/docs/api-reference/responses/create)를 참고했습니다.
